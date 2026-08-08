@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-agent-service
+  namespace: ai-agents
+spec:
+  type: NodePort
+  ports:
+    - port: 8642
+      targetPort: 8642
+      nodePort: 30842
+      name: gateway
+  selector:
+    app: hermes-agent
