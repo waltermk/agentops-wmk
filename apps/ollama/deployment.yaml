@@ -22,6 +22,7 @@ spec:
             - /bin/sh
             - -c
             - |
+              apk add --no-cache curl
               ollama serve &
               SERVER_PID=$!
               until curl -s http://localhost:11434/api/version > /dev/null; do sleep 1; done
