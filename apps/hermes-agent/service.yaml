@@ -6,8 +6,8 @@ metadata:
 spec:
   type: NodePort
   ports:
-    - port: 8642
-      targetPort: 8642
+    - port: 9119
+      targetPort: 9119
       nodePort: 30842
       name: gateway
   selector:
