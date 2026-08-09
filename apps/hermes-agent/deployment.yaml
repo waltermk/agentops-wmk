@@ -17,22 +17,55 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/hostname: k3s-dev
+      # --- INIT CONTAINER: Generates hash and injects it into config.yaml ---
+      initContainers:
+        - name: setup-auth
+          image: nousresearch/hermes-agent:v2026.8.3
+          command: ["/opt/hermes/.venv/bin/python3"]
+          args:
+            - "-c"
+            - |
+              import os
+              import yaml
+              from plugins.dashboard_auth.basic import hash_password
+              
+              config_path = '/opt/data/config.yaml'
+              config = {}
+              
+              if os.path.exists(config_path):
+                  with open(config_path, 'r') as f:
+                      config = yaml.safe_load(f) or {}
+                      
+              if 'dashboard' not in config:
+                  config['dashboard'] = {}
+                  
+              config['dashboard']['basic_auth'] = {
+                  'username': 'admin',
+                  'password_hash': hash_password('admin123')
+              }
+              
+              with open(config_path, 'w') as f:
+                  yaml.dump(config, f)
+          volumeMounts:
+            - name: agent-data
+              mountPath: /opt/data
+      # ----------------------------------------------------------------------
       containers:
         - name: agent
           image: nousresearch/hermes-agent:v2026.8.3
-          args: ["serve", "--host", "0.0.0.0", "--port", "9119", "--skip-build"]
+          args: ["gateway", "run"]
           ports:
-            - containerPort: 9119
-              name: serve
+            - containerPort: 8642
+              name: gateway
           env:
             - name: PORT
-              value: "9119"
+              value: "8642"
             - name: API_SERVER_ENABLED
               value: "true"
             - name: API_SERVER_HOST
               value: "0.0.0.0"
             - name: API_SERVER_PORT
-              value: "9119"
+              value: "8642"
             - name: API_SERVER_KEY
               valueFrom:
                 secretKeyRef:
