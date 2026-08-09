@@ -17,7 +17,6 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/hostname: k3s-dev
-      # --- INIT CONTAINER: Generates hash and injects it into config.yaml ---
       initContainers:
         - name: setup-auth
           image: nousresearch/hermes-agent:v2026.8.3
@@ -35,10 +34,19 @@ spec:
               if os.path.exists(config_path):
                   with open(config_path, 'r') as f:
                       config = yaml.safe_load(f) or {}
-                      
+              
+              # Force API Server to bind to all interfaces
+              if 'api_server' not in config:
+                  config['api_server'] = {}
+              config['api_server']['enabled'] = True
+              config['api_server']['host'] = '0.0.0.0'
+              config['api_server']['port'] = 8642
+              
+              # Force Dashboard to bind to all interfaces
               if 'dashboard' not in config:
                   config['dashboard'] = {}
-                  
+              config['dashboard']['host'] = '0.0.0.0'
+              config['dashboard']['port'] = 8642
               config['dashboard']['basic_auth'] = {
                   'username': 'admin',
                   'password_hash': hash_password('admin123')
@@ -49,7 +57,6 @@ spec:
           volumeMounts:
             - name: agent-data
               mountPath: /opt/data
-      # ----------------------------------------------------------------------
       containers:
         - name: agent
           image: nousresearch/hermes-agent:v2026.8.3
